@@ -1,0 +1,10 @@
+redis:
+  container_name: cluster-balancer-redis
+  image: redis:3.0
+  ports:
+    - "6379:6379"
+zookeeper:
+  container_name: cluster-balancer-zookeeper
+  image: wurstmeister/zookeeper
+  ports:
+    - "2181:2181"
