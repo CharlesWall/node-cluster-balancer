@@ -3,7 +3,7 @@
 const Promise = require('bluebird');
 const uuid = require('uuid');
 const RedisInterface = require('../lib/RedisInterface');
-const Advisor = require('..');
+const ClusterBalancer = require('..');
 
 const REDIS_URL = '127.0.0.1:6379';
 
@@ -26,8 +26,8 @@ describe('RedisInterface', () => {
     require('./simulations/clusterBalancing-test')({
         redis: { url: REDIS_URL },
         clusterName: uuid.v4(),
-        interval: Advisor.intervals.HYPER_REALTIME,
-        precision: Advisor.precisions.HIGH,
-        stepSize: Advisor.stepSizes.MEDIUM
+        interval: ClusterBalancer.intervals.HYPER_REALTIME,
+        precision: ClusterBalancer.precisions.HIGH,
+        stepSize: ClusterBalancer.stepSizes.MEDIUM
     });
 });

@@ -1,7 +1,7 @@
 'use strict';
 
 const uuid = require('uuid');
-const Advisor = require('../..');
+const ClusterBalancer = require('../..');
 const Promise = require('bluebird');
 
 module.exports = function(advisorOptions) {
@@ -16,7 +16,7 @@ module.exports = function(advisorOptions) {
             return new Promise((resolve, reject) => {
                 options.getSelfStatus = getSelfStatus;
 
-                let advisor = new Advisor(options);
+                let advisor = ClusterBalancer.createAdvisor(options);
                 test.advisors.push(advisor);
                 advisor.on('ready', () => { resolve(advisor); });
             });

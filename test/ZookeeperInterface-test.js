@@ -1,9 +1,10 @@
 'use strict';
 
-const ZookeeperInterface = require('../lib/ZookeeperInterface');
 const uuid = require('uuid');
 const Promise = require('bluebird');
-const Advisor = require('..');
+
+const ClusterBalancer = require('..');
+const ZookeeperInterface = require('../lib/ZookeeperInterface');
 
 const ZOOKEEPER_URL = '127.0.0.1:2181';
 
@@ -28,8 +29,8 @@ describe('ZookeeperInterface', () => {
     require('./simulations/clusterBalancing-test')({
         zookeeper: { url: ZOOKEEPER_URL },
         clusterName: uuid.v4(),
-        interval: Advisor.intervals.HYPER_REALTIME,
-        precision: Advisor.precisions.HIGH,
-        stepSize: Advisor.stepSizes.MEDIUM
+        interval: ClusterBalancer.intervals.HYPER_REALTIME,
+        precision: ClusterBalancer.precisions.HIGH,
+        stepSize: ClusterBalancer.stepSizes.MEDIUM
     });
 });

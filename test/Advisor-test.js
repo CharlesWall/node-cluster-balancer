@@ -9,7 +9,7 @@ const {EventEmitter} = require('events');
 
 const Status = require('../lib/Status');
 
-describe('Advise', function() {
+describe('Advisor', function() {
     function testScenario(scenario, expectations) {
         let mockDbInterface = null;
 
@@ -33,9 +33,9 @@ describe('Advise', function() {
 
         util.inherits(MockDbInterface, EventEmitter);
 
-        const Advisor = proxyquire('..', {
-            './lib/RedisInterface': MockDbInterface,
-            './lib/ZookeeperInterface': MockDbInterface
+        const Advisor = proxyquire('../lib/Advisor', {
+            './RedisInterface': MockDbInterface,
+            './ZookeeperInterface': MockDbInterface
         });
 
 
