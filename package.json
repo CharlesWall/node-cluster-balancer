@@ -1,7 +1,7 @@
 {
   "name": "cluster-balancer",
   "version": "1.0.0",
-  "description": "autonomously balance load across a cluster using zookeeper",
+  "description": "autonomously balance load across a cluster using zookeeper or redis",
   "main": "index.js",
   "scripts": {
     "test": "bin/start-test.sh"

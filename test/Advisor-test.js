@@ -84,10 +84,12 @@ describe('Advisor', function() {
 
     context('when there are no peers', function() {
         it('should give no advise', function() {
+            this.timeout(6000);
             let scenario = createScenario({});
-            return testScenario(scenario).then(advice => {
-                expect(advice).to.equal(null);
-            });
+            return testScenario(scenario).timeout(5000, 'expected no advice')
+                .catch(err => {
+                    expect(err.message).to.equal('expected no advice');
+                });
         });
     });
     context('when there are peers', function() {
