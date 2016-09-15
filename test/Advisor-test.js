@@ -18,7 +18,6 @@ describe('Advisor', function() {
 
             this.options = options;
 
-
             this.getPeerStatuses = function() {
                 return Promise.resolve(scenario.peerStatuses);
             };
@@ -86,7 +85,7 @@ describe('Advisor', function() {
         it('should give no advise', function() {
             this.timeout(6000);
             let scenario = createScenario({});
-            return testScenario(scenario).timeout(5000, 'expected no advice')
+            return testScenario(scenario).timeout(1500, 'expected no advice')
                 .catch(err => {
                     expect(err.message).to.equal('expected no advice');
                 });
@@ -95,23 +94,25 @@ describe('Advisor', function() {
     context('when there are peers', function() {
         context('when the maximum disparity is within the threshold', function() {
             context('when the local instance has a higher value that the mean', function() {
-                it('should advise no change', function() {
+                it('should advise not advise', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([20, 19, 21]),
                         selfStatus: createStatus(22)
-                    })).then(advice => {
-                        expect(advice.change).to.equal(0);
-                    });
+                    })).timeout(1500, 'expected no advice')
+                        .catch(err => {
+                            expect(err.message).to.equal('expected no advice');
+                        });
                 });
             });
             context('when the local instance has less that the mean', function() {
-                it('should advice no change', function() {
+                it('should advise not advise', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([20, 22, 21]),
                         selfStatus: createStatus(19)
-                    })).then(advice => {
-                        expect(advice.change).to.equal(0);
-                    });
+                    })).timeout(1500, 'expected no advice')
+                        .catch(err => {
+                            expect(err.message).to.equal('expected no advice');
+                        });
                 });
             });
         });
@@ -124,17 +125,19 @@ describe('Advisor', function() {
                         selfStatus: createStatus(100)
                     })).then(advice => {
                         expect(advice.change).to.equal(-1);
+                        expect(advice.reduction).to.equal(1);
                     });
                 });
             });
-            context('when the local instanc has less that the mean', function() {
-                it('should advise no change', function() {
+            context('when the local instance has less that the mean', function() {
+                it('should advise not advise', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([5, 22, 21]),
                         selfStatus: createStatus(6)
-                    })).then(advice => {
-                        expect(advice.change).to.equal(0);
-                    });
+                    })).timeout(1500, 'expected no advice')
+                        .catch(err => {
+                            expect(err.message).to.equal('expected no advice');
+                        });
                 });
             });
         });
