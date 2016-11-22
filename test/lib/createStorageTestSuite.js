@@ -1,6 +1,5 @@
 'use strict';
 
-const Status = require('../lib/Status');
 const uuid = require('uuid');
 const {expect} = require('chai');
 const Promise = require('bluebird');
@@ -14,11 +13,11 @@ module.exports = function(_createDbInterface) {
         function createDbInterface(options) {
             //hijack the creation of interfaces so we can close them all when the
             //test completes
-            return _createDbInterface(options).tap(dbInterface => {
+            return Promise.resolve(_createDbInterface(options)).tap(dbInterface => {
                 createdInterfaces.push(dbInterface);
             });
         }
-        const createPeerInterfaces = require('./lib/createPeerInterfaces')(createDbInterface);
+        const createPeerInterfaces = require('../lib/createPeerInterfaces')(createDbInterface);
 
         beforeEach(() => {
             clusterName = uuid.v4();
@@ -26,7 +25,7 @@ module.exports = function(_createDbInterface) {
         });
 
         const closeDbInterface = dbInterface => {
-            return dbInterface.close().catch((error) => { /* Don't care... */ });
+            return dbInterface.stop().catch((error) => { /* Don't care... */ });
         };
 
         afterEach(() => {
@@ -83,7 +82,7 @@ module.exports = function(_createDbInterface) {
                             let lastDbInterface = dbInterfaces.pop();
 
                             return (function verifyInstanceRemoval() {
-                                return dbInterfaces.shift().close().then(() => {
+                                return dbInterfaces.shift().stop().then(() => {
                                     return lastDbInterface.getPeerStatuses();
                                 }).then(peerStatuses => {
                                     expect(peerStatuses.length).to.equal(dbInterfaces.length);

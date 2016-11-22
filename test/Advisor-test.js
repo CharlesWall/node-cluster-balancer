@@ -1,43 +1,27 @@
 'use strict';
 
-const proxyquire = require('proxyquire');
 const {expect} = require('chai');
 const uuid = require('uuid');
-const Promise = require('bluebird');
-const util = require('util');
-const {EventEmitter} = require('events');
-
 const Status = require('../lib/Status');
+const Advisor = require('../lib/Advisor');
+
+function MockStorage(options) {
+    let _peerStatuses = options.peerStatuses || [];
+
+    this.getPeerStatuses = function() {
+        return Promise.resolve(_peerStatuses);
+    };
+    this.publishSelfStatus = function(status) {
+        return Promise.resolve(status);
+    };
+
+    this.ready = function() {
+        return Promise.resolve();
+    };
+}
 
 describe('Advisor', function() {
-    function testScenario(scenario, expectations) {
-        let mockDbInterface = null;
-
-        let MockDbInterface = function(options) {
-            mockDbInterface = this;
-
-            this.options = options;
-
-            this.getPeerStatuses = function() {
-                return Promise.resolve(scenario.peerStatuses);
-            };
-            this.publishSelfStatus = function(status) {
-                return Promise.resolve(status);
-            };
-
-            setImmediate(() => {
-                mockDbInterface.emit('ready', mockDbInterface);
-            });
-        };
-
-        util.inherits(MockDbInterface, EventEmitter);
-
-        const Advisor = proxyquire('../lib/Advisor', {
-            './RedisInterface': MockDbInterface,
-            './ZookeeperInterface': MockDbInterface
-        });
-
-
+    function testScenario(scenario) {
         scenario.advisorOptions.getSelfStatus = function() {
             return Promise.resolve(scenario.selfStatus);
         };
@@ -45,9 +29,7 @@ describe('Advisor', function() {
         let advisor = new Advisor(scenario.advisorOptions);
 
         return new Promise((resolve, reject) => {
-            advisor.once('advice', advice => {
-                resolve(advice);
-            });
+            advisor.once('advice', resolve);
         });
     }
 
@@ -67,12 +49,13 @@ describe('Advisor', function() {
         options = options || {};
         return {
             advisorOptions: options.advisorOptions || {
-                zookeeper: { url: 'localhost:2181' },
+                storage: new MockStorage({
+                    peerStatuses: options.peerStatuses
+                }),
                 clusterName: uuid.v4(),
                 interval: 10,
                 stepSize: 1
             },
-            peerStatuses: options.peerStatuses || [],
             selfStatus: options.selfStatus || new Status({
                 value: 100,
                 name: uuid.v4(),
@@ -85,54 +68,212 @@ describe('Advisor', function() {
         it('should give no change', function() {
             let scenario = createScenario({});
             return testScenario(scenario).then(advice => {
-                expect(advice.change).to.equal(0);
+                expect(advice.changes.length).to.equal(0);
             });
         });
     });
     context('when there are peers', function() {
         context('when the maximum disparity is within the threshold', function() {
-            context('when the local instance has a higher value that the mean', function() {
+            context('when the local instance has a higher value than the mean', function() {
                 it('should advise not advise', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([20, 19, 21]),
                         selfStatus: createStatus(22)
                     })).then(advice => {
-                        expect(advice.change).to.equal(0);
+                        expect(advice.changes.length).to.equal(0);
                     });
                 });
             });
-            context('when the local instance has less that the mean', function() {
+            context('when the local instance has less than the mean', function() {
                 it('should advise not change', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([20, 22, 21]),
                         selfStatus: createStatus(19)
                     })).then(advice => {
-                        expect(advice.change).to.equal(0);
+                        expect(advice.changes.length).to.equal(0);
                     });
                 });
             });
         });
 
         context('when the maximum disparity exceeds the threshold', function() {
-            context('when the local instance has a higher value that the mean', function() {
+            context('when the local instance has a higher value than the mean', function() {
                 it('should advise a stepSize change', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([20, 22, 21]),
                         selfStatus: createStatus(100)
                     })).then(advice => {
-                        expect(advice.change).to.equal(-1);
-                        expect(advice.reduction).to.equal(1);
+                        expect(advice.changes[0].delta).to.equal(-1);
+                        expect(advice.changes[0].reduction).to.equal(1);
                     });
                 });
             });
-            context('when the local instance has less that the mean', function() {
+            context('when the local instance has less than the mean', function() {
                 it('should advise no change', function() {
                     return testScenario(createScenario({
                         peerStatuses: createPeerStatuses([5, 22, 21]),
                         selfStatus: createStatus(6)
                     })).then(advice => {
-                        expect(advice.change).to.equal(0);
+                        expect(advice.changes.length).to.equal(0);
                     });
+                });
+            });
+        });
+    });
+
+    it('should allow on-demand requests of statuses', function() {
+        let selfValue = 10;
+
+        let advisor = new Advisor({
+            selfName: 'a0',
+
+            getSelfStatus() {
+                return selfValue++;
+            },
+
+            storage: new MockStorage({
+                peerStatuses: [
+                    new Status({
+                        name: 'a1',
+                        value: 1
+                    }),
+
+                    new Status({
+                        name: 'a2',
+                        value: 2
+                    }),
+
+                    new Status({
+                        name: 'a3',
+                        value: 3
+                    })
+                ]
+            })
+        });
+
+        return Promise.resolve().then(() => {
+            return advisor.getAllStatuses().then((statuses) => {
+                statuses.sort((s1, s2) => {
+                    return s1.name.localeCompare(s2.name);
+                });
+
+                statuses = statuses.map((status) => {
+                    return {
+                        name: status.name,
+                        value: status.value
+                    };
+                });
+
+                expect(statuses).to.deep.equal([
+                    {
+                        name: 'a0',
+                        value: 10
+                    },
+                    {
+                        name: 'a1',
+                        value: 1
+                    },
+                    {
+                        name: 'a2',
+                        value: 2
+                    },
+                    {
+                        name: 'a3',
+                        value: 3
+                    }
+                ]);
+            });
+        }).then(() => {
+            return advisor.getAllStatuses().then((statuses) => {
+                statuses.sort((s1, s2) => {
+                    return s1.name.localeCompare(s2.name);
+                });
+
+                statuses = statuses.map((status) => {
+                    return {
+                        name: status.name,
+                        value: status.value
+                    };
+                });
+
+                expect(statuses).to.deep.equal([
+                    {
+                        name: 'a0',
+                        value: 11
+                    },
+                    {
+                        name: 'a1',
+                        value: 1
+                    },
+                    {
+                        name: 'a2',
+                        value: 2
+                    },
+                    {
+                        name: 'a3',
+                        value: 3
+                    }
+                ]);
+            });
+        });
+    });
+
+    it('should allow finding least utilized target', function() {
+        let selfValue = 10;
+
+        let advisor = new Advisor({
+            selfName: 'a0',
+
+            healthyThreshold: 1000,
+
+            getSelfStatus() {
+                return selfValue++;
+            },
+
+            storage: new MockStorage({
+                peerStatuses: [
+                    // this instance is unhealthy because its timestamp
+                    // compared to now will be higher than allowed threshold
+                    new Status({
+                        name: 'a1',
+                        value: 1,
+                        timestamp: Date.now() - 1500
+                    }),
+
+                    // this instance is out-of-service because `maxCapacity` is 0
+                    new Status({
+                        name: 'a2',
+                        value: 2,
+                        timestamp: Date.now() - 500,
+                        maxCapacity: 0
+
+                    }),
+
+                    // this instance is healthy
+                    new Status({
+                        name: 'a3',
+                        value: 3,
+                        timestamp: Date.now() - 100,
+                    }),
+
+                    // this instance is healthy
+                    new Status({
+                        name: 'a4',
+                        value: 1,
+                        timestamp: Date.now() - 500,
+                    })
+                ]
+            })
+        });
+
+        return Promise.resolve().then(() => {
+            return advisor.getLeastUtilizedTarget().then((target) => {
+                expect({
+                    name: target.name,
+                    value: target.value
+                }).to.deep.equal({
+                    name: 'a4',
+                    value: 1
                 });
             });
         });

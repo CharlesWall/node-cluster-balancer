@@ -52,5 +52,6 @@
     "white": false,
     "eqeqeq": false,
     "latedef": "nofunc",
-    "sub": true
+    "sub": true,
+    "expr": true
 }
