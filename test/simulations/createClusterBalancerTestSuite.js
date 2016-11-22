@@ -8,35 +8,30 @@ module.exports = function(advisorOptions) {
     describe('simulations', () => {
         let test;
 
-        function getOptionsCopy() {
-            return Object.assign({}, advisorOptions);
-        }
-
         function createAdvisor(options, getSelfStatus) {
-            return new Promise((resolve, reject) => {
-                options.getSelfStatus = getSelfStatus;
+            options.getSelfStatus = getSelfStatus;
 
-                let advisor = ClusterBalancer.createAdvisor(options);
-                test.advisors.push(advisor);
-                advisor.on('ready', () => { resolve(advisor); });
-            });
+            let advisor = ClusterBalancer.createAdvisor(options);
+            test.advisors.push(advisor);
+            return advisor.ready();
         }
 
         function createAdvisors(inintialValues) {
             let clusterName = uuid.v4();
             return Promise.map(inintialValues, initialValue => {
-                let options = getOptionsCopy();
+                let options = Object.assign({}, advisorOptions);
                 let selfName = options.selfName = uuid.v4();
-                let address = options.address = uuid.v4();
+                options.selfAddress = uuid.v4();
+
                 options.clusterName = clusterName;
+
                 let values = test.values;
                 values[selfName] = initialValue;
-                return createAdvisor(options, advisor => {
-                    return Promise.resolve({
-                        name: selfName,
-                        address: address,
+
+                return createAdvisor(options, () => {
+                    return {
                         value: values[selfName]
-                    });
+                    };
                 });
             });
         }
@@ -51,31 +46,37 @@ module.exports = function(advisorOptions) {
 
         afterEach(() => {
             return Promise.map(test.advisors, advisor => {
-                return advisor.close();
+                return advisor.stop();
             });
         });
 
         function logValues(values) {
-            console.log();
-            for (let advisorName in values) {
-                let value = values[advisorName];
-                console.log(`  ${advisorName} : ${value}`);
-            }
+            // console.log();
+            // for (let advisorName in values) {
+            //     let value = values[advisorName];
+            //     console.log(`  ${advisorName} : ${value}`);
+            // }
         }
 
         function executeAdvice(options) {
             let {advisor, advice, values} = options;
-            if (advice == null) { return; }
+
+            if ((advice == null) || !advice.changes.length) {
+                return;
+            }
+
+            let change = advice.changes[0];
+
             let advisorName = advisor.getSelfName();
             let targetName;
             if (test.targetedReconnection) {
-                targetName = advice.targets[0].name;
+                targetName = change.target.name;
             } else {
                 targetName = chooseRandom(Object.keys(values));
             }
-            values[advisorName] += advice.change;
-            values[targetName] -= advice.change;
-            // logValues(values);
+            values[advisorName] += change.delta;
+            values[targetName] -= change.delta;
+            logValues(values);
         }
 
         function checkIfBalanced(values, threshold) {
@@ -102,8 +103,6 @@ module.exports = function(advisorOptions) {
             var index = Math.floor(Math.random() * array.length);
             return array[index];
         }
-
-
 
         function assertEventuallyBalances(advisors, options) {
             return new Promise((resolve, reject) => {
@@ -136,6 +135,7 @@ module.exports = function(advisorOptions) {
                     this.timeout(20000);
                     // similar to after deploying new instances
                     let initialPeerValues = [25, 26, 25, 25, 26, 25, 25, 0, 0];
+
                     return createAdvisors(initialPeerValues).then(advisors => {
                         return assertEventuallyBalances(advisors, {
                             targeted: test.targetedReconnection,

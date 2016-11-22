@@ -2,6 +2,6 @@
 
 bin/start-docker.sh
 
-mocha test
+node test/bin/run.js test $@
 
 bin/stop-docker.sh

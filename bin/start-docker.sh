@@ -3,6 +3,6 @@
 pushd .
 
 cd test/docker
-docker-compose start
+docker-compose up -d
 
 popd

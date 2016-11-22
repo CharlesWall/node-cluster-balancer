@@ -2,6 +2,11 @@
   "name": "cluster-balancer",
   "version": "1.1.0",
   "description": "autonomously balance load across a cluster using zookeeper or redis",
+  "homepage": "https://github.com/CharlesWall/node-cluster-balancer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CharlesWall/node-cluster-balancer.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "bin/start-test.sh"
@@ -16,6 +21,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "mocha": "^3.1.2",
     "proxyquire": "^1.7.10"
   }
 }

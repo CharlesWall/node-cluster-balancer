@@ -2,13 +2,10 @@
 
 const Advisor = require('./lib/Advisor');
 
-
-function _createAdvisor(options) {
-    return new Advisor(options);
-}
-
 module.exports = {
-    createAdvisor: _createAdvisor,
+    createAdvisor: function(options) {
+        return new Advisor(options);
+    },
     intervals: {
         HYPER_REALTIME: 100,
         REALTIME: 1000,
