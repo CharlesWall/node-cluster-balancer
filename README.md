@@ -131,21 +131,30 @@ The `Status` type is used to keep track of a status and contains the following:
 You can also get on-demand access to the status of the cluster via:
 
 ```javascript
-let allStatuses = clusterAdvisor.getAllStatuses();
-// `allStatuses` will be an an array of `Status` objects
+// Fetch the latest peer statuses
+return clusterAdvisor.update().then(() => {
+    let allStatuses = clusterAdvisor.getAllStatuses();
+    // `allStatuses` will be an an array of `Status` objects
+});
 ```
 
 Similarly, you can also get the statuses of all peer instances:
 
 ```javascript
-let peerStatuses = clusterAdvisor.getPeerStatuses();
-// `peerStatuses` will be an array of `Status` objects
+// Fetch the latest peer statuses
+return clusterAdvisor.update().then(() => {
+    let peerStatuses = clusterAdvisor.getPeerStatuses();
+    // `peerStatuses` will be an array of `Status` objects
+});
 ```
 
 If you just want the least utilized target, then you can use
 the following:
 
 ```javascript
-let target = clusterAdvisor.getLeastUtilizedTarget();
-// `target` is the `Status` as reported by the least utilized instance
+// Fetch the latest peer statuses
+return clusterAdvisor.update().then(() => {
+    let target = clusterAdvisor.getLeastUtilizedTarget();
+    // `target` is the `Status` as reported by the least utilized instance
+});
 ```
