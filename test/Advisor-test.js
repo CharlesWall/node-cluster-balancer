@@ -28,9 +28,7 @@ describe('Advisor', function() {
 
         let advisor = new Advisor(scenario.advisorOptions);
 
-        return new Promise((resolve, reject) => {
-            advisor.once('advice', resolve);
-        });
+        return advisor.getAdvice();
     }
 
     function createStatus(value) {
@@ -53,7 +51,7 @@ describe('Advisor', function() {
                     peerStatuses: options.peerStatuses
                 }),
                 clusterName: uuid.v4(),
-                interval: 10,
+                interval: 0,
                 stepSize: 1
             },
             selfStatus: options.selfStatus || new Status({
@@ -126,6 +124,7 @@ describe('Advisor', function() {
 
         let advisor = new Advisor({
             selfName: 'a0',
+            interval: 0,
 
             getSelfStatus() {
                 return selfValue++;
@@ -151,70 +150,72 @@ describe('Advisor', function() {
             })
         });
 
-        return Promise.resolve().then(() => {
-            return advisor.getAllStatuses().then((statuses) => {
-                statuses.sort((s1, s2) => {
-                    return s1.name.localeCompare(s2.name);
-                });
-
-                statuses = statuses.map((status) => {
-                    return {
-                        name: status.name,
-                        value: status.value
-                    };
-                });
-
-                expect(statuses).to.deep.equal([
-                    {
-                        name: 'a0',
-                        value: 10
-                    },
-                    {
-                        name: 'a1',
-                        value: 1
-                    },
-                    {
-                        name: 'a2',
-                        value: 2
-                    },
-                    {
-                        name: 'a3',
-                        value: 3
-                    }
-                ]);
-            });
+        return advisor.ready().then(() => {
+            return advisor.update();
         }).then(() => {
-            return advisor.getAllStatuses().then((statuses) => {
-                statuses.sort((s1, s2) => {
-                    return s1.name.localeCompare(s2.name);
-                });
-
-                statuses = statuses.map((status) => {
-                    return {
-                        name: status.name,
-                        value: status.value
-                    };
-                });
-
-                expect(statuses).to.deep.equal([
-                    {
-                        name: 'a0',
-                        value: 11
-                    },
-                    {
-                        name: 'a1',
-                        value: 1
-                    },
-                    {
-                        name: 'a2',
-                        value: 2
-                    },
-                    {
-                        name: 'a3',
-                        value: 3
-                    }
-                ]);
+            let statuses = advisor.getAllStatuses();
+            statuses.sort((s1, s2) => {
+                return s1.name.localeCompare(s2.name);
             });
+
+            statuses = statuses.map((status) => {
+                return {
+                    name: status.name,
+                    value: status.value
+                };
+            });
+
+            expect(statuses).to.deep.equal([
+                {
+                    name: 'a0',
+                    value: 10
+                },
+                {
+                    name: 'a1',
+                    value: 1
+                },
+                {
+                    name: 'a2',
+                    value: 2
+                },
+                {
+                    name: 'a3',
+                    value: 3
+                }
+            ]);
+
+            return advisor.update();
+        }).then(() => {
+            let statuses = advisor.getAllStatuses();
+            statuses.sort((s1, s2) => {
+                return s1.name.localeCompare(s2.name);
+            });
+
+            statuses = statuses.map((status) => {
+                return {
+                    name: status.name,
+                    value: status.value
+                };
+            });
+
+            expect(statuses).to.deep.equal([
+                {
+                    name: 'a0',
+                    value: 11
+                },
+                {
+                    name: 'a1',
+                    value: 1
+                },
+                {
+                    name: 'a2',
+                    value: 2
+                },
+                {
+                    name: 'a3',
+                    value: 3
+                }
+            ]);
         });
     });
 
@@ -223,7 +224,7 @@ describe('Advisor', function() {
 
         let advisor = new Advisor({
             selfName: 'a0',
-
+            interval: 0,
             healthyThreshold: 1000,
 
             getSelfStatus() {
@@ -266,15 +267,16 @@ describe('Advisor', function() {
             })
         });
 
-        return Promise.resolve().then(() => {
-            return advisor.getLeastUtilizedTarget().then((target) => {
-                expect({
-                    name: target.name,
-                    value: target.value
-                }).to.deep.equal({
-                    name: 'a4',
-                    value: 1
-                });
+        return advisor.ready().then(() => {
+            return advisor.update();
+        }).then(() => {
+            let target = advisor.getLeastUtilizedTarget();
+            expect({
+                name: target.name,
+                value: target.value
+            }).to.deep.equal({
+                name: 'a4',
+                value: 1
             });
         });
     });

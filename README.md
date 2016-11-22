@@ -32,11 +32,11 @@ also receive advice about when to redirect existing client connections.
 
 ```javascript
 let clusterAdvisor = require('cluster-balancer').createAdvisor({
-    // The interval (in milliseconds) at which our instance status
-    // will be updated. At this interval, the advisor will also
-    // make decisions about which clients should be redirected and
-    // to where if an significant imbalance is detected.
-    interval: 100,
+    // The interval (in milliseconds) at which we will publish our status
+    reportInterval: 100,
+
+    // The interval (in milliseconds) at which we will emit `advice` events
+    adviceInterval: 100,
 
     // The `precision` property is used to describe the threshold at
     // which corrective measures will be made when redistributing clients.
@@ -131,24 +131,21 @@ The `Status` type is used to keep track of a status and contains the following:
 You can also get on-demand access to the status of the cluster via:
 
 ```javascript
-clusterAdvisor.getAllStatuses().then((statuses) => {
-    // `statuses` is an array of `Status` objects
-});
+let allStatuses = clusterAdvisor.getAllStatuses();
+// `allStatuses` will be an an array of `Status` objects
 ```
 
 Similarly, you can also get the statuses of all peer instances:
 
 ```javascript
-clusterAdvisor.getPeerStatuses().then((statuses) => {
-    // `statuses` is an array of `Status` objects
-});
+let peerStatuses = clusterAdvisor.getPeerStatuses();
+// `peerStatuses` will be an array of `Status` objects
 ```
 
 If you just want the least utilized target, then you can use
 the following:
 
 ```javascript
-clusterAdvisor.getLeastUtilizedTarget().then((target) => {
-    // `target` is an instance of `Status`
-});
+let target = clusterAdvisor.getLeastUtilizedTarget();
+// `target` is the `Status` as reported by the least utilized instance
 ```
