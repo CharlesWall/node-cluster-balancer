@@ -31,7 +31,7 @@ Create an instance of an _advisor_ that will periodically report status and
 also receive advice about when to redirect existing client connections.
 
 ```javascript
-let clusterAdvisor = ClusterBalancer.createAdvisor({
+let clusterAdvisor = require('cluster-balancer').createAdvisor({
     // The interval (in milliseconds) at which our instance status
     // will be updated. At this interval, the advisor will also
     // make decisions about which clients should be redirected and
@@ -103,7 +103,12 @@ clusterAdvisor.on('advice', (advice) => {
     advice.changes.forEach((change) => {
         // redirect `change.reduction` connections to `change.target.address`
     });
-})
+});
+
+// Error handling
+clusterAdvisor.on('error', (err) => {
+    console.error('cluster-balancer advisor error.', (err.stack || err));
+});
 ```
 
 In addition to the **Redis** storage mechanism, **Apache ZooKeeper** can also be used via the following:

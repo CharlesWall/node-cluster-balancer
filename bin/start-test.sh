@@ -2,6 +2,6 @@
 
 bin/start-docker.sh
 
-node test/bin/run.js test
+node test/bin/run.js test $@
 
 bin/stop-docker.sh
