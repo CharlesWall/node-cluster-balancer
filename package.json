@@ -1,6 +1,6 @@
 {
   "name": "cluster-balancer",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "autonomously balance load across a cluster using zookeeper or redis",
   "homepage": "https://github.com/CharlesWall/node-cluster-balancer",
   "repository": {
