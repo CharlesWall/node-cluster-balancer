@@ -1,6 +1,6 @@
 {
   "name": "cluster-balancer",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "autonomously balance load across a cluster using zookeeper or redis",
   "homepage": "https://github.com/CharlesWall/node-cluster-balancer",
   "repository": {
@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.4.1",
-    "ioredis": "^2.3.0",
+    "ioredis": "^4.19.2",
     "node-zookeeper-client": "^0.2.2",
     "uuid": "^2.0.2"
   },
